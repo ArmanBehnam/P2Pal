@@ -22,4 +22,6 @@ QString GUI::getInputText() const {
     return inputField->text();
 }
 
-void GUI::append
+void GUI::appendChatLog(const QString &text) {
+    chatLog->append(text);
+}

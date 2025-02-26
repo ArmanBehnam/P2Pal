@@ -1,5 +1,24 @@
 # Programming Assignment 1
-## Project Structure (Example - C++ with Qt6)
+
+## P2Pal - Peer-to-Peer Chat Application
+
+P2Pal is a simple peer-to-peer chat application that implements a gossip-based protocol for reliable message delivery, using both rumor mongering and anti-entropy mechanisms.
+
+## Features
+
+- UDP-based messaging with QUdpSocket
+- Message serialization/deserialization using QVariantMap and JSON
+- Gossip protocol with rumor mongering and anti-entropy
+- Auto peer discovery on local ports
+- Support for manual peer addition
+- Unique node identification
+- Vector clocks for message synchronization
+- Sequence numbering for ordered message delivery
+- Simple Qt6-based GUI with chat log and text input
+
+
+## Project Structure
+
 ```bash
 P2Pal/
 ├── src/
@@ -14,7 +33,7 @@ P2Pal/
 │   ├── message.cpp
 │   ├── peer.h           // Peer management
 │   ├── peer.cpp
-│   └── gui.h            // GUI related code
+│   ├── gui.h            // GUI related code
 │   └── gui.cpp
 ├── tests/
 │   ├── test_message.cpp // Unit tests for message handling
@@ -24,112 +43,126 @@ P2Pal/
 ├── scripts/
 │   ├── build.sh         // Build script
 │   ├── run_instances.sh // Script to run multiple instances
-│   ├── test.sh          // Test script
-│   └── deploy.sh        // Deployment script (if needed)
+│   └── test.sh          // Test script
 ├── docs/
-│   ├── README.md        // Project overview, build instructions, usage
-│   ├── design.md        // Detailed design documentation
-│   └── testing.md       // Testing procedures and results
-├── P2Pal.pro            // Qt project file (or CMakeLists.txt)
-└── .gitignore
+│   └── README.md        // Project overview
+├── CMakeLists.txt       // CMake build configuration
+└── P2Pal.pro            // Qt project file
 ```
 
-## Implementation Highlights (C++ with Qt6)
+## Building
 
-* **GUI (gui.h/gui.cpp):**
-    * Use `QTextEdit` for the chat log and `QLineEdit` (or `QPlainTextEdit`) for the input.
-    * Connect signals and slots for message input and display.
-    * Set focus to the input field on startup.
-* **Network (network.h/network.cpp):**
-    * Use `QUdpSocket` for sending and receiving messages.
-    * Implement functions for sending and receiving `QVariantMap` messages.
-    * Handle local port discovery.
-* **Message (message.h/message.cpp):**
-    * Define a `Message` class or struct with `ChatText`, `Origin`, and `Sequence number` fields.
-    * Implement serialization and deserialization using `QVariantMap`.
-* **Gossip (gossip.h/gossip.cpp):**
-    * Implement Rumor Mongering:
-        * Use `QTimer` for resending messages.
-        * Maintain a map of messages and their status (sent, acknowledged).
-    * Implement Anti-Entropy:
-        * Use a map to store vector clock information (seen messages from each origin).
-        * Implement logic to compare vector clocks and request missing messages.
-* **Peer (peer.h/peer.cpp):**
-    * Implement peer discovery, and peer list management.
+### Prerequisites
 
-## Documentation (docs/design.md, docs/testing.md)
+- Qt 6.2.0 or later
+- C++17 compatible compiler (GCC, Clang, MSVC)
+- CMake 3.16 or later (if using CMake build system)
 
-* **design.md:**
-    * Detailed description of the gossip protocol implementation.
-    * Explanation of the vector clock mechanism.
-    * Network communication details.
-    * GUI design.
-* **testing.md:**
-    * Description of test cases.
-    * Testing procedures.
-    * Testing results.
-
-## Build Instructions (docs/README.md and scripts/build.sh)
-
-* **Qt Project File (P2Pal.pro):**
-    * Configure project settings, including dependencies.
-* **build.sh:**
+### Building with CMake
 
 ```bash
-#!/bin/bash
-qmake P2Pal.pro
-make
-```
-
-* Or using CMake:
-
-```bash
-#!/bin/bash
+# Create build directory
 mkdir build
 cd build
+
+# Configure and build
 cmake ..
-make
+cmake --build . --config Release
 ```
 
-## Test Cases (tests/)
+## Running
 
-* **Unit Tests (test_message.cpp, test_gossip.cpp, test_network.cpp, test_gui.cpp):**
-    * Use a testing framework (e.g., Qt Test).
-    * Test message serialization/deserialization, gossip protocol logic, network communication, and GUI functionality.
-    * Test corner cases, and error handling.
-* **Integration Tests (run_instances.sh, test.sh):**
-    * Verify message propagation between multiple instances.
-    * Test peer discovery and message ordering.
-
-## Automation Scripts (scripts/)
-
-* **run_instances.sh:**
+### Single instance
 
 ```bash
-#!/bin/bash
-./P2Pal &
-./P2Pal &
-./P2Pal &
-./P2Pal &
+# From the build directory
+./P2Pal
 ```
 
-* **test.sh:**
+specify a port to use:
 
 ```bash
-#!/bin/bash
-./P2Pal_tests # or ctest if using cmake
-./scripts/run_instances.sh
-sleep 5 # Allow instances to connect
-# Perform manual verification of message propagation
+./P2Pal --port 5000
 ```
 
-* **deploy.sh:**
-    * If you have a deployment environment, create a script to copy the executable and dependencies.
+### Multiple instances for testing
 
-**Important Considerations:**
+To test communication between multiple instances:
 
-* **Error Handling:** Implement robust error handling for network operations, message processing, and GUI interactions.
-* **Concurrency:** If you use threads, ensure proper synchronization to avoid race conditions.
-* **Security:** For a production-ready application, consider security measures (e.g., encryption).
-* **Scalability:** For larger networks, optimize the gossip protocol and peer discovery mechanisms.
-* **User Experience:** Design a user-friendly GUI with clear feedback and error messages.
+```bash
+# Start multiple instances on different ports
+./P2Pal --port 5000 &
+./P2Pal --port 5001 &
+./P2Pal --port 5002 &
+./P2Pal --port 5003 &
+```
+
+## Usage
+
+1. The application automatically discovers other P2Pal instances running on standard ports on localhost (5000-5009)
+2. You can manually add peers by providing their IP address and port
+3. Type messages in the text input area and press Enter to send
+4. Messages will be propagated to all connected peers through the gossip protocol
+
+## Protocol Details
+
+### Message Types
+
+#### Rumor Message
+```
+{
+    "Type": "Rumor",
+    "Origin": "<unique-node-id>",
+    "SequenceNumber": <sequence-number>,
+    "ChatText": "<message-text>"
+}
+```
+
+#### Status Message
+```
+{
+    "Type": "Status",
+    "Want": {
+        "<origin1>": <max-sequence-number>,
+        "<origin2>": <max-sequence-number>,
+        ...
+    }
+}
+```
+
+### Gossip Protocol Implementation
+
+1. **Rumor Mongering**
+   - When a node creates or receives a new message, it propagates it to a randomly selected peer
+   - Messages are retransmitted periodically until acknowledgment is received
+   - Each message is uniquely identified by its origin and sequence number
+
+2. **Anti-Entropy**
+   - Nodes periodically share their status (vector clock) with random peers
+   - When a node receives a status message, it compares with its own state
+   - If the node has messages the peer doesn't have, it sends them
+   - If the peer has messages the node doesn't have, it requests them
+
+### Vector Clocks
+
+Each node maintains a mapping of:
+- Origin (node ID) → Highest sequence number seen
+
+This allows efficient synchronization between peers.
+
+## Testing
+
+To verify correct implementation:
+
+1. Launch multiple instances using different ports
+2. Send messages from different instances
+3. Observe message propagation across all instances
+4. Check sequence numbers to verify ordered delivery
+5. Kill and restart instances to test resilience
+
+## Troubleshooting
+
+- If instances can't connect, ensure no firewall is blocking UDP traffic
+- Check that the selected ports are available and not in use
+- Messages may take some time to propagate through the network, especially with many hops
+
